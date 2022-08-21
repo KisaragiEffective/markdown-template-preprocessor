@@ -1,4 +1,3 @@
-use std::borrow::{BorrowMut, Cow};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::ops::Index;
@@ -59,7 +58,7 @@ fn main() {
     };
 
     let input_content = {
-        let mut pattern = Regex::from_str(r#"\{\{link or include\|./((?:\w+/)+)(\w+\.md)\}\}"#).unwrap();
+        let pattern = Regex::from_str(r#"\{\{link or include\|./((?:\w+/)+)(\w+\.md)\}\}"#).unwrap();
         pattern.replace_all(input_content.as_str(), |captures: &Captures| {
             let file_path = captures.index(1);
             let file_name = captures.index(2);
@@ -80,8 +79,7 @@ fn main() {
 
                     let including_text = {
                         let include_pat = Regex::from_str(r#"<!-- START -->\n?((.|\n)*)<!-- END -->"#).unwrap();
-                        let cap_iter = include_pat.captures_iter(buf.as_str());
-                        let ret = cap_iter.map(|a| {
+                        let ret = include_pat.captures_iter(buf.as_str()).map(|a| {
                             let to_include = a.index(1).to_string();
                             // lower header level by one
                             let header_pat = Regex::from_str("(?m)^(#{1,5})(.*)$").unwrap();
@@ -91,6 +89,7 @@ fn main() {
 
                             to_include
                         }).join("");
+
                         ret
                     };
 
