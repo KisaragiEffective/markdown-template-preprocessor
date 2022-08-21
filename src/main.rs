@@ -36,10 +36,6 @@ impl Args {
             return Err("The output path must point to file".to_string())
         }
 
-        if !self.output_file.exists() {
-            return Err("The output file must be exist".to_string())
-        }
-
         Ok(self)
     }
 }
