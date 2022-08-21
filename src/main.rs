@@ -1,3 +1,7 @@
+#![forbid(unsafe_code)]
+#![deny(clippy::all)]
+#![warn(clippy::pedantic, clippy::nursery)]
+
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::ops::Index;
