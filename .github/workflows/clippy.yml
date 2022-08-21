@@ -1,6 +1,6 @@
 on: 
-- push
-- pull_request
+  pull_request:
+    branches: [ "master" ]
 
 name: Clippy check
 jobs:
