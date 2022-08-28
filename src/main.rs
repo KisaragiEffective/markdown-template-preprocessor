@@ -62,7 +62,7 @@ fn main() {
         pattern.replace_all(input_content.as_str(), |captures: &Captures| {
             let file_path = captures.index(1);
             let file_name = captures.index(2);
-            println!("including: {file_path} {file_name}");
+            println!("including: {file_path}/{file_name}");
             let full_file_path = format!("{file_path}{file_name}");
             match args.build_mode {
                 BuildMode::Dynamic => format!("This section is migrated. Please see [{file_name}](./{full_file_path})"),
