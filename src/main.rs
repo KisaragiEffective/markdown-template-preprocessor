@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-#![deny(clippy::all)]
+#![deny(clippy::all, clippy::collection_is_never_read)]
 #![warn(clippy::pedantic, clippy::nursery)]
 
 use std::fs::File;
@@ -105,9 +105,10 @@ impl PreProcessor for LinkOrInclude {
                         ret
                     };
 
+                    pasting_text.push_str(&including_text);
                     pasting_text.push_str("\n</details>");
 
-                    including_text
+                    pasting_text
                 }
                 BuildMode::Static => {
                     let mut cloned_path = build_context.input_file.to_path_buf();
