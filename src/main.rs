@@ -5,7 +5,7 @@
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::ops::Index;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use clap::Parser;
 use regex::{Captures, Regex};
@@ -47,27 +47,33 @@ enum BuildMode {
     Static,
 }
 
-fn main() {
-    let args: Args = Args::parse().validate().unwrap();
-    println!("{args:?}", args = &args);
-    let mut input = BufReader::new(File::open(&args.input_file).expect("failed to open input file"));
-    let input_content = {
-        let mut buf = String::new();
-        input.read_to_string(&mut buf).unwrap();
-        buf
-    };
+struct BuildContext<'ctx> {
+    mode: BuildMode,
+    input_file: &'ctx Path,
+}
 
-    let input_content = {
+trait PreProcessor {
+    fn transform(&self, build_context: &BuildContext<'_>, content: String) -> String;
+}
+
+/**
+* insert inter-link or file content directly
+* tag syntax: {{link or include|&lt;relative path of markdown from root document&gt;}}
+*/
+struct LinkOrInclude;
+
+impl PreProcessor for LinkOrInclude {
+    fn transform(&self, build_context: &BuildContext<'_>, input_content: String) -> String {
         let pattern = Regex::from_str(r#"\{\{link or include\|./((?:\w+/)+)(\w+\.md)\}\}"#).unwrap();
         pattern.replace_all(input_content.as_str(), |captures: &Captures| {
             let file_path = captures.index(1);
             let file_name = captures.index(2);
             println!("including: {file_path}/{file_name}");
             let full_file_path = format!("{file_path}{file_name}");
-            match args.build_mode {
+            match build_context.mode {
                 BuildMode::Dynamic => format!("This section is migrated. Please see [{file_name}](./{full_file_path})"),
                 BuildMode::Static => {
-                    let mut cloned_path = args.input_file.clone();
+                    let mut cloned_path = build_context.input_file.to_path_buf();
                     cloned_path.pop();
                     let target_path = cloned_path.join(file_path).join(file_name);
                     println!("{target_path}", target_path = &target_path.to_str().unwrap());
@@ -97,7 +103,26 @@ fn main() {
                 }
             }
         }).to_string()
+    }
+}
+
+fn main() {
+    let mut args: Args = Args::parse().validate().unwrap();
+    println!("{args:?}", args = &args);
+    let mut input = BufReader::new(File::open(&args.input_file).expect("failed to open input file"));
+    let input_content = {
+        let mut buf = String::new();
+        input.read_to_string(&mut buf).unwrap();
+        buf
     };
+
+    let build_context = BuildContext {
+        mode: args.build_mode,
+        input_file: &mut args.input_file,
+    };
+
+    let input_content = LinkOrInclude.transform(&build_context, input_content);
+    let input_content = LinkOrInclude.transform(&build_context, input_content);
 
     let mut output = BufWriter::new(File::options().write(true).create(true).truncate(true).open(args.output_file).unwrap());
     output.write_all(input_content.as_bytes()).expect("could not write output to destination");
