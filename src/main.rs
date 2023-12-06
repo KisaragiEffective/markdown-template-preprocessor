@@ -112,7 +112,7 @@ impl PreProcessor for LinkOrInclude {
  */
 struct AlwaysInclude;
 
-impl PreProcessor for LinkOrInclude {
+impl PreProcessor for AlwaysInclude {
     fn transform(&self, build_context: &BuildContext<'_>, content: String) -> String {
         let pattern = Regex::from_str(r#"\{\{include\|./((?:\w+/)+)(\w+)\}\}"#).unwrap();
         pattern.replace_all(content.as_str(), |captures: &Captures| {
