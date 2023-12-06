@@ -45,6 +45,7 @@ impl Args {
 enum BuildMode {
     Dynamic,
     Static,
+    Spoiler
 }
 
 struct BuildContext<'ctx> {
@@ -72,6 +73,42 @@ impl PreProcessor for LinkOrInclude {
             let full_file_path = format!("{file_path}{file_name}");
             match build_context.mode {
                 BuildMode::Dynamic => format!("This section is migrated. Please see [{file_name}](./{full_file_path})"),
+                BuildMode::Spoiler => {
+                    let mut cloned_path = build_context.input_file.to_path_buf();
+                    cloned_path.pop();
+                    let target_path = cloned_path.join(file_path).join(file_name);
+                    let mut pasting_text = String::from("<details><summary>");
+                    pasting_text.push_str("content of ");
+                    pasting_text.push_str(target_path.to_str().unwrap_or("included file"));
+                    pasting_text.push_str("</summary>\n\n");
+
+                    println!("{target_path}", target_path = &target_path.to_str().unwrap());
+                    let target_path = target_path.canonicalize().unwrap();
+                    println!("{path}", path = &target_path.to_str().unwrap());
+                    let mut fd = BufReader::new(File::open(target_path).expect("Inclusion target file open error"));
+                    let mut buf = String::new();
+                    fd.read_to_string(&mut buf).unwrap();
+
+                    let including_text = {
+                        let include_pat = Regex::from_str(r#"<!-- START -->\n?((.|\n)*)<!-- END -->"#).unwrap();
+                        let ret = include_pat.captures_iter(buf.as_str()).map(|a| {
+                            let to_include = a.index(1).to_string();
+                            // lower header level by one
+                            let header_pat = Regex::from_str("(?m)^(#{1,5})(.*)$").unwrap();
+                            let to_include = header_pat.replace_all(to_include.as_str(), |cap: &Captures| {
+                                format!("#{header}{headline_text}", header = cap.index(1), headline_text = cap.index(2))
+                            }).to_string();
+
+                            to_include
+                        }).join("");
+
+                        ret
+                    };
+
+                    pasting_text.push_str("\n</details>");
+
+                    including_text
+                }
                 BuildMode::Static => {
                     let mut cloned_path = build_context.input_file.to_path_buf();
                     cloned_path.pop();
