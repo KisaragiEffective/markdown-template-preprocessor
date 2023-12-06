@@ -106,6 +106,34 @@ impl PreProcessor for LinkOrInclude {
     }
 }
 
+/**
+ * insert arbitrary file content directly
+ * tag syntax: {{include|&lt;relative path from root document&gt;}}
+ */
+struct AlwaysInclude;
+
+impl PreProcessor for AlwaysInclude {
+    fn transform(&self, build_context: &BuildContext<'_>, content: String) -> String {
+        let pattern = Regex::from_str(r#"\{\{include\|./((?:\w+/)+)(\w+)\}\}"#).unwrap();
+        pattern.replace_all(content.as_str(), |captures: &Captures| {
+            let file_path = captures.index(1);
+            let file_name = captures.index(2);
+            println!("including: {file_path}/{file_name}");
+            let mut cloned_path = build_context.input_file.to_path_buf();
+            cloned_path.pop();
+            let target_path = cloned_path.join(file_path).join(file_name);
+            println!("{target_path}", target_path = &target_path.to_str().unwrap());
+            let target_path = target_path.canonicalize().unwrap();
+            println!("{path}", path = &target_path.to_str().unwrap());
+            let mut fd = BufReader::new(File::open(target_path).expect("Inclusion target file open error"));
+            let mut including_text = String::new();
+            fd.read_to_string(&mut including_text).unwrap();
+
+            including_text
+        }).to_string()
+    }
+}
+
 fn main() {
     let mut args: Args = Args::parse().validate().unwrap();
     println!("{args:?}", args = &args);
@@ -122,7 +150,7 @@ fn main() {
     };
 
     let input_content = LinkOrInclude.transform(&build_context, input_content);
-    let input_content = LinkOrInclude.transform(&build_context, input_content);
+    let input_content = AlwaysInclude.transform(&build_context, input_content);
 
     let mut output = BufWriter::new(File::options().write(true).create(true).truncate(true).open(args.output_file).unwrap());
     output.write_all(input_content.as_bytes()).expect("could not write output to destination");
