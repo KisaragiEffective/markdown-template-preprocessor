@@ -152,7 +152,7 @@ struct AlwaysInclude;
 
 impl PreProcessor for AlwaysInclude {
     fn transform(&self, build_context: &BuildContext<'_>, content: String) -> String {
-        let pattern = Regex::from_str(r#"\{\{include\|./((?:\w+/)+)(\w+)\}\}"#).unwrap();
+        let pattern = Regex::from_str(r#"\{\{include\|./((?:\w+/)+)([\w.]+)\}\}"#).unwrap();
         pattern.replace_all(content.as_str(), |captures: &Captures| {
             let file_path = captures.index(1);
             let file_name = captures.index(2);
