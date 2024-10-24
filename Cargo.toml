@@ -9,4 +9,4 @@ edition = "2021"
 clap = { version = "4.4.11", features = ["derive"] }
 itertools = "0.12.1"
 regex = "1.10.2"
-strum = { version = "0.26.0", features = ["derive"] }
+strum = { version = "0.25.0", features = ["derive"] }
