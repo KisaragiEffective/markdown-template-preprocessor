@@ -1,3 +1,5 @@
+# This workflow is managed by gh actions-lock.
+
 on: 
   pull_request:
     branches: [ "master" ]
@@ -7,9 +9,9 @@ jobs:
   clippy_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
       - run: rustup component add clippy
-      - uses: actions-rs/clippy-check@v1
+      - uses: actions-rs/clippy-check@v1.0.7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
